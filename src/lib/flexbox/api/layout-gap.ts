@@ -23,6 +23,7 @@ import {BaseFxDirective} from './base';
 import {MediaChange} from '../../media-query/media-change';
 import {MediaMonitor} from '../../media-query/media-monitor';
 import {LayoutDirective, LAYOUT_VALUES} from './layout';
+import {LayoutWrapDirective} from './layout-wrap';
 
 /**
  * 'layout-padding' styling directive
@@ -91,7 +92,8 @@ export class LayoutGapDirective extends BaseFxDirective implements AfterContentI
   constructor(monitor: MediaMonitor,
               elRef: ElementRef,
               renderer: Renderer,
-              @Optional() @Self() container: LayoutDirective) {
+              @Optional() @Self() container: LayoutDirective,
+              @Optional() @Self() private _wrap: LayoutWrapDirective) {
     super(monitor, elRef, renderer);
 
     if (container) {  // Subscribe to layout direction changes
@@ -176,13 +178,24 @@ export class LayoutGapDirective extends BaseFxDirective implements AfterContentI
           .filter(el => (el.nodeType === 1))   // only Element types
           .filter(el => this._getDisplayStyle(el) != "none");
 
-    // Reset 1st child element to 0px gap
-    let skipped = items.filter((el, j) => j == 0);
-    this._applyStyleToElements(this._buildCSS(0), skipped);
+    if ( !this._wrap ) {
 
-    // For each `element` child, set the padding styles...
-    items = items.filter((el, j) => j > 0);          // skip first element since gaps are needed
-    this._applyStyleToElements(this._buildCSS(value), items);
+      // Reset 1st child element to 0px gap
+      let skipped = items.filter((el, j) => j == 0);
+      this._applyStyleToElements(this._buildCSS(0), skipped);
+
+      // For each `element` child, set the margin styles...
+      items = items.filter((el, j) => j > 0);          // skip first element since gaps are needed
+      this._applyStyleToElements(this._buildCSS(value), items);
+
+    } else {
+
+      // For each `element` children EXCEPT the last,
+      // set the margin right/bottom styles...
+      items = items.filter((el, j) => j < (items.length - 1));
+      this._applyStyleToElements(this._buildCSS(value), items);
+
+    }
   }
 
   /**
@@ -200,6 +213,9 @@ export class LayoutGapDirective extends BaseFxDirective implements AfterContentI
     switch (this._layout) {
       case 'column':
         key = 'margin-top';
+        if ( this._wrap ) {
+          key = 'margin-bottom';
+        }
         break;
       case 'column-reverse':
         key = 'margin-bottom';
@@ -208,10 +224,11 @@ export class LayoutGapDirective extends BaseFxDirective implements AfterContentI
         key = 'margin-right';
         break;
       case "row" :
-        key = 'margin-left';
-        break;
       default :
         key = 'margin-left';
+        if ( this._wrap ) {
+          key = 'margin-right';
+        }
         break;
     }
     margins[key] = value;

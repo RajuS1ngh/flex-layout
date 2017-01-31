@@ -201,6 +201,45 @@ describe('layout-gap directive', () => {
       expect(nodes[2].nativeElement).toHaveCssStyle({'margin-left': '16px'});
 
     });
+
+    it('should adjust gaps based on layout-wrap presence', () => {
+      let styles = ['.col1 { display:none !important;'];
+      let template = `
+            <div class="container" 
+                 [fxLayout]="direction" 
+                 [fxLayoutGap]="gap"
+                 fxLayoutWrap>
+              <div fxFlex class="col1">Div 1</div>
+              <div fxFlex class="col2">Div 2</div>
+              <div fxFlex class="col3">Div 2</div>
+              <div fxFlex class="col4">Div 3</div>
+            </div>
+          `;
+      fixture = createTestComponent(template, styles);
+      fixture.componentInstance.gap = '16px';
+      fixture.componentInstance.direction = 'row';
+      fixture.detectChanges();
+
+      let nodes = queryFor(fixture, '[fxFlex]');
+
+      expect(nodes.length).toEqual(4);
+      expect(nodes[0].nativeElement).not.toHaveCssStyle({'margin-right': '16px'});
+      expect(nodes[1].nativeElement).toHaveCssStyle({'margin-right': '16px'});
+      expect(nodes[2].nativeElement).toHaveCssStyle({'margin-right': '16px'});
+      expect(nodes[3].nativeElement).not.toHaveCssStyle({'margin-right': '16px'});
+
+      fixture.componentInstance.gap = '8px';
+      fixture.componentInstance.direction = 'column';
+      fixture.detectChanges();
+
+      nodes = queryFor(fixture, '[fxFlex]');
+
+      expect(nodes.length).toEqual(4);
+      expect(nodes[0].nativeElement).not.toHaveCssStyle({'margin-bottom': '8px'});
+      expect(nodes[1].nativeElement).toHaveCssStyle({'margin-bottom': '8px'});
+      expect(nodes[2].nativeElement).toHaveCssStyle({'margin-bottom': '8px'});
+      expect(nodes[3].nativeElement).not.toHaveCssStyle({'margin-bottom': '8px'});
+    });
   });
 
   describe('with responsive features', () => {
